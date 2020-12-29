@@ -1,5 +1,6 @@
 from mycroft import MycroftSkill, intent_handler
 
+
 # Mycroft Colors
 blue = "#22A7F0"
 blue_dark = "#2C3E50"
@@ -15,7 +16,7 @@ class WifiConnect(MycroftSkill):
 
     def initialize(self):
         """Create event handlers"""
-        self.add_event("mycroft.internet.connected", self.handle_internet_connected)
+        self.add_event("mycroft.internet.connected", self.report_setup_complete)
         self.add_event("system.wifi.setup.hotspot_activated", self.prompt_to_join_ap)
         self.add_event(
             "system.wifi.setup.hotspot_connected", self.prompt_to_sign_in_to_ap
@@ -54,10 +55,6 @@ class WifiConnect(MycroftSkill):
             step(None)
             sleep(5)
 
-
-    def handle_internet_connected(self, message):
-        """System came online later after booting."""
-        self.enclosure.mouth_reset()
 
     def prompt_to_join_ap(self, message):
         """Provide instructions for setting up wifi."""
