@@ -1,4 +1,7 @@
+from time import sleep
 from mycroft import MycroftSkill, intent_handler
+from mycroft.audio import wait_while_speaking
+from mycroft.util import connected
 
 
 # Mycroft Colors
@@ -17,78 +20,84 @@ class WifiConnect(MycroftSkill):
 
     def initialize(self):
         """Create event handlers"""
-        self.add_event("mycroft.internet.connected", self.report_setup_complete)
-        self.add_event("system.wifi.setup.hotspot_activated", self.prompt_to_join_ap)
-        self.add_event(
-            "system.wifi.setup.hotspot_connected", self.prompt_to_sign_in_to_ap
-        )
-        self.add_event(
-            "system.wifi.setup.network_selection",
-            self.prompt_to_select_network,
-        )
-        self.add_event("system.wifi.setup.connected", self.report_setup_complete)
+        # TODO wire up message bus events to trigger prompts.
+        # self.add_event("system.wifi.setup.hotspot_activated", self.prompt_to_join_ap)
+        # self.add_event(
+        #     "system.wifi.setup.hotspot_connected", self.prompt_to_sign_in_to_ap
+        # )
+        # self.add_event(
+        #     "system.wifi.setup.network_selection",
+        #     self.prompt_to_select_network,
+        # )
+        # self.add_event("system.wifi.setup.connected", self.report_setup_complete)
+        if not connected():
+            self.show_all_screens()
+        else:
+            self.report_setup_complete()
 
     @intent_handler("test.intent")
-    def show_all_screens(self, message):
+    def show_all_screens(self, message=None):
         """Show UI screens
 
         For testing purposes only
         """
-        from time import sleep
-
-        # images = [
-        #     f"{self.root_dir}/ui/0_start.png",
-        #     f"{self.root_dir}/ui/1_connect-to-ap.png",
-        #     f"{self.root_dir}/ui/2_follow-prompt.png",
-        #     f"{self.root_dir}/ui/3_choose-wifi.png",
-        # ]
-        # for image in images:
-        #     self.log.info(image)
-        #     self.gui.show_image(image)
-        #     sleep(10)
         steps = [
             self.prompt_to_join_ap,
             self.prompt_to_sign_in_to_ap,
             self.prompt_to_select_network,
-            self.report_setup_complete
         ]
         for step in steps:
-            step(None)
+            step()
+            wait_while_speaking()
             sleep(5)
 
+        while True:
+            if connected():
+                self.report_setup_complete()
+                break
+            else:
+                sleep(2)
 
-    def prompt_to_join_ap(self, message):
-        """Provide instructions for setting up wifi."""
-        text = self.translate("device.wifi.setup.started")
-        self.speak_dialog(text)
+
+    def prompt_to_join_ap(self, message=None):
+        """Prompt user to join temporary access point."""
+        self.speak_dialog("1_ap.created_speech")
         self.gui["phone_image"] = "1_phone_connect-to-ap.png"
         self.gui["prompt"] = "Connect to the \nWifi network"
         self.gui["highlight"] = "MYCROFT"
-        self.gui.show_page("prompt.qml")
+        self.gui.show_page("prompt.qml", override_idle=True)
 
-    def prompt_to_sign_in_to_ap(self, message):
-        """Provide instructions for setting up wifi."""
-        text = self.translate("device.wifi.setup.started")
-        self.speak_dialog(text)
+    def prompt_to_sign_in_to_ap(self, message=None):
+        """Prompt user to sign into access point."""
+        self.speak_dialog("2_sign.in.to.ap_speech")
         self.gui["phone_image"] = "2_phone_follow-prompt.png"
         self.gui["prompt"] = "Follow the \nprompt on your \nmobile device or \ncomputer"
         self.gui["highlight"] = ""
 
-    def prompt_to_select_network(self, message):
+    def prompt_to_select_network(self, message=None):
         """Prompt user to select network and login."""
-        text = self.translate("device.wifi.setup.network.selection")
-        self.speak_dialog(text)
         self.gui["phone_image"] = "3_phone_choose-wifi.png"
         self.gui["prompt"] = "Choose the \nWifi network to \nconnect your \nMycroft device"
         self.gui["highlight"] = ""
 
-    def report_setup_complete(self, message):
-        """Wifi setup complete, network is connected."""
-        self.speak_dialog("device.wifi.setup.complete")
-        self.gui["icon"] = "check-circle.svg"
-        self.gui["label"] = "Connected"
+    def report_setup_complete(self, message=None):
+        """Report when wifi setup is complete, network is connected."""
+        self.speak_dialog("4_internet.connected_speech")
         self.gui["bgColor"] = green
+        self.gui["icon"] = "check-circle.svg"
+        self.gui["label"] = self.translate("4_internet.connected_screen")
         self.gui.remove_page("prompt.qml")
+        self.gui.show_page("status.qml")
+        wait_while_speaking()
+        sleep(5)
+        self.gui.release()
+
+    def report_error(self, message=None):
+        """Report if an error occured during wifi setup."""
+        self.gui.remove_page("prompt.qml")
+        self.gui["bgColor"] = red
+        self.gui["icon"] = "times-circle.svg"
+        self.gui["label"] = "Incorrect password"
         self.gui.show_page("status.qml")
 
 
