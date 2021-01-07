@@ -6,8 +6,9 @@ blue = "#22A7F0"
 blue_dark = "#2C3E50"
 blue_pale = "#8CE0FE"
 green = "#40DBB0"
-orange = "#FD9E66"
 yellow = "#FEE255"
+orange = "#FD9E66"
+red = "#D81159"
 
 
 class WifiConnect(MycroftSkill):
