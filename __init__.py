@@ -1,6 +1,7 @@
 from time import sleep
 from mycroft import MycroftSkill, intent_handler
 from mycroft.audio import wait_while_speaking
+from mycroft.messagebus.message import Message
 from mycroft.util import connected
 
 
@@ -30,10 +31,9 @@ class WifiConnect(MycroftSkill):
         #     self.prompt_to_select_network,
         # )
         # self.add_event("system.wifi.setup.connected", self.report_setup_complete)
-        if not connected():
-            self.show_all_screens()
-        else:
-            self.report_setup_complete()
+
+        # TODO Check if connected() just to be safe.
+        self.add_event("mycroft.wifi.setup", self.show_all_screens)
 
     @intent_handler("test.intent")
     def show_all_screens(self, message=None):
@@ -91,6 +91,7 @@ class WifiConnect(MycroftSkill):
         wait_while_speaking()
         sleep(5)
         self.gui.release()
+        self.bus.emit(Message('mycroft.ready'))
 
     def report_error(self, message=None):
         """Report if an error occured during wifi setup."""
