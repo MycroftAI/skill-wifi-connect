@@ -32,8 +32,10 @@ class WifiConnect(MycroftSkill):
         # )
         # self.add_event("system.wifi.setup.connected", self.report_setup_complete)
 
-        # TODO Check if connected() just to be safe.
-        self.add_event("mycroft.wifi.setup", self.show_all_screens)
+        # TODO when on screen setup ready - trigger from button push
+        # self.add_event("mycroft.wifi.setup", self.show_all_screens)
+        if not connected():
+            self.show_all_screens()
 
     @intent_handler("test.intent")
     def show_all_screens(self, message=None):
@@ -49,7 +51,7 @@ class WifiConnect(MycroftSkill):
         for step in steps:
             step()
             wait_while_speaking()
-            sleep(5)
+            sleep(8)
 
         while True:
             if connected():
@@ -82,13 +84,13 @@ class WifiConnect(MycroftSkill):
 
     def report_setup_complete(self, message=None):
         """Report when wifi setup is complete, network is connected."""
-        self.speak_dialog("4_internet.connected_speech")
+        # self.speak_dialog("4_internet.connected_speech")
         self.gui["bgColor"] = green
         self.gui["icon"] = "check-circle.svg"
         self.gui["label"] = self.translate("4_internet.connected_screen")
         self.gui.remove_page("prompt.qml")
         self.gui.show_page("status.qml")
-        wait_while_speaking()
+        # wait_while_speaking()
         sleep(5)
         self.gui.release()
         self.bus.emit(Message('mycroft.ready'))
