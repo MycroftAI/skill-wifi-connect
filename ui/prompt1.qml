@@ -25,9 +25,9 @@ import Mycroft 1.0 as Mycroft
 Mycroft.ProportionalDelegate {
     id: root
     property var spacingUnit: 30
-    property var phone: sessionData.phone_image
-    property var prompt: sessionData.prompt
-    property var highlight: sessionData.highlight
+    property var phone: sessionData.phone_image1
+    property var prompt: sessionData.prompt1
+    property var highlight: sessionData.highlight1 || ""
 
     Row {
         spacing: spacingUnit

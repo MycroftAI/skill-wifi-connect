@@ -34,6 +34,7 @@ class WifiConnect(MycroftSkill):
 
         # TODO when on screen setup ready - trigger from button push
         # self.add_event("mycroft.wifi.setup", self.show_all_screens)
+        sleep(3)
         if not connected():
             self.show_all_screens()
 
@@ -64,23 +65,23 @@ class WifiConnect(MycroftSkill):
     def prompt_to_join_ap(self, message=None):
         """Prompt user to join temporary access point."""
         self.speak_dialog("1_ap.created_speech")
-        self.gui["phone_image"] = "1_phone_connect-to-ap.png"
-        self.gui["prompt"] = "Connect to the \nWifi network"
-        self.gui["highlight"] = "MYCROFT"
-        self.gui.show_page("prompt.qml", override_idle=True)
+        self.gui["phone_image1"] = "1_phone_connect-to-ap.png"
+        self.gui["prompt1"] = "Connect to the \nWifi network"
+        self.gui["highlight1"] = "Mycroft"
+        self.gui.show_page("prompt1.qml", override_idle=True)
 
     def prompt_to_sign_in_to_ap(self, message=None):
         """Prompt user to sign into access point."""
         self.speak_dialog("2_sign.in.to.ap_speech")
-        self.gui["phone_image"] = "2_phone_follow-prompt.png"
-        self.gui["prompt"] = "Follow the \nprompt on your \nmobile device or \ncomputer"
-        self.gui["highlight"] = ""
+        self.gui["phone_image2"] = "2_phone_follow-prompt.png"
+        self.gui["prompt2"] = "Follow the \nprompt on your \nmobile device or \ncomputer"
+        self.gui.show_page("prompt2.qml")
 
     def prompt_to_select_network(self, message=None):
         """Prompt user to select network and login."""
-        self.gui["phone_image"] = "3_phone_choose-wifi.png"
-        self.gui["prompt"] = "Choose the \nWifi network to \nconnect your \nMycroft device"
-        self.gui["highlight"] = ""
+        self.gui["phone_image3"] = "3_phone_choose-wifi.png"
+        self.gui["prompt3"] = "Choose the \nWifi network to \nconnect your \nMycroft device"
+        self.gui.show_page("prompt3.qml")
 
     def report_setup_complete(self, message=None):
         """Report when wifi setup is complete, network is connected."""
@@ -88,7 +89,9 @@ class WifiConnect(MycroftSkill):
         self.gui["bgColor"] = green
         self.gui["icon"] = "check-circle.svg"
         self.gui["label"] = self.translate("4_internet.connected_screen")
-        self.gui.remove_page("prompt.qml")
+        self.gui.remove_page("prompt1.qml")
+        self.gui.remove_page("prompt2.qml")
+        self.gui.remove_page("prompt3.qml")
         self.gui.show_page("status.qml")
         # wait_while_speaking()
         sleep(5)
