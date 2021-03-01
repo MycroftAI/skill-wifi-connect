@@ -1,6 +1,6 @@
 from time import sleep
 from mycroft import MycroftSkill, intent_handler
-from mycroft.audio import wait_while_speaking
+from mycroft.audio import stop_speaking, wait_while_speaking
 from mycroft.messagebus.message import Message
 from mycroft.util import connected
 
@@ -34,35 +34,38 @@ class WifiConnect(MycroftSkill):
 
         # TODO when on screen setup ready - trigger from button push
         # self.add_event("mycroft.wifi.setup", self.show_all_screens)
-        sleep(3)
+        sleep(5)
         if not connected():
             self.show_all_screens()
 
     @intent_handler("test.intent")
-    def show_all_screens(self, message=None):
-        """Show UI screens
-
-        For testing purposes only
-        """
+    def show_all_screens(self, _=None):
+        """Show UI screens at a consistent interval."""
         steps = [
             self.prompt_to_join_ap,
             self.prompt_to_sign_in_to_ap,
             self.prompt_to_select_network,
         ]
         for step in steps:
+            if connected():
+                break
             step()
+            for sec in range(8):
+                if self.check_connection():
+                    return
+                else:
+                    sleep(1)
             wait_while_speaking()
-            sleep(8)
+
 
         while True:
-            if connected():
-                self.report_setup_complete()
-                break
+            if self.check_connection():
+                return
             else:
                 sleep(2)
 
 
-    def prompt_to_join_ap(self, message=None):
+    def prompt_to_join_ap(self, _=None):
         """Prompt user to join temporary access point."""
         self.speak_dialog("1_ap.created_speech")
         self.gui["phone_image1"] = "1_phone_connect-to-ap.png"
@@ -70,20 +73,31 @@ class WifiConnect(MycroftSkill):
         self.gui["highlight1"] = "Mycroft"
         self.gui.show_page("prompt1.qml", override_idle=True)
 
-    def prompt_to_sign_in_to_ap(self, message=None):
+    def prompt_to_sign_in_to_ap(self, _=None):
         """Prompt user to sign into access point."""
-        self.speak_dialog("2_sign.in.to.ap_speech")
+        self.speak_dialog("2a_sign.in.to.ap_speech")
         self.gui["phone_image2"] = "2_phone_follow-prompt.png"
         self.gui["prompt2"] = "Follow the \nprompt on your \nmobile device or \ncomputer"
         self.gui.show_page("prompt2.qml")
+        wait_while_speaking()
+        self.speak_dialog("2b_sign.in.to.ap_speech")
+        self.gui["prompt2"] = "If you don't get \na prompt, go to \nstart.mycroft.ai"
+        self.gui["phone_image2"] = "3_phone_choose-wifi.png"
 
-    def prompt_to_select_network(self, message=None):
+    def prompt_to_select_network(self, _=None):
         """Prompt user to select network and login."""
         self.gui["phone_image3"] = "3_phone_choose-wifi.png"
         self.gui["prompt3"] = "Choose the \nWifi network to \nconnect your \nMycroft device"
         self.gui.show_page("prompt3.qml")
 
-    def report_setup_complete(self, message=None):
+    def check_connection(self):
+        is_connected = connected()
+        if is_connected:
+            stop_speaking()
+            self.report_setup_complete()
+        return is_connected
+
+    def report_setup_complete(self, _=None):
         """Report when wifi setup is complete, network is connected."""
         # self.speak_dialog("4_internet.connected_speech")
         self.gui["bgColor"] = green
@@ -98,7 +112,7 @@ class WifiConnect(MycroftSkill):
         self.gui.release()
         self.bus.emit(Message('mycroft.ready'))
 
-    def report_error(self, message=None):
+    def report_error(self, _=None):
         """Report if an error occured during wifi setup."""
         self.gui.remove_page("prompt.qml")
         self.gui["bgColor"] = red
