@@ -1,6 +1,8 @@
 from time import sleep
+
 from mycroft import MycroftSkill, intent_handler
 from mycroft.audio import stop_speaking, wait_while_speaking
+from mycroft.identity import IdentityManager
 from mycroft.messagebus.message import Message
 from mycroft.util import connected
 
@@ -14,6 +16,15 @@ yellow = "#FEE255"
 orange = "#FD9E66"
 red = "#D81159"
 
+def has_paired_before() -> bool:
+    """Simple check for whether a device has previously been paired.
+
+    This does not verify that the pairing information is valid or up to date.
+    The assumption being - if it's previously paired, then it has previously
+    connected to the internet.
+    """
+    identity = IdentityManager.get()
+    return identity.uuid != ""
 
 class WifiConnect(MycroftSkill):
     def __init__(self):
@@ -34,7 +45,15 @@ class WifiConnect(MycroftSkill):
 
         # TODO when on screen setup ready - trigger from button push
         # self.add_event("mycroft.wifi.setup", self.show_all_screens)
-        sleep(5)
+        if has_paired_before():
+            self.log.debug(
+                "Device has previously connected to a network. Delaying Wifi "
+                "to provide system time to connect to slower Wifi networks."
+            )
+            sleep(25)
+        else:
+            # Give the GUI and Wifi Connect time to get started.
+            sleep(5)
         if not connected():
             self.show_all_screens()
 
