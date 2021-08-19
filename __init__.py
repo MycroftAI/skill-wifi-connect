@@ -50,16 +50,17 @@ class WifiConnect(MycroftSkill):
                 "Device has previously connected to a network. Delaying Wifi "
                 "to provide system time to connect to slower Wifi networks."
             )
-            sleep(25)
+            delay = 25
         else:
             # Give the GUI and Wifi Connect time to get started.
-            sleep(5)
-        if not connected():
-            self.show_all_screens()
+            delay = 5
+        self.schedule_event(self.show_all_screens, delay)
 
     @intent_handler("test.intent")
     def show_all_screens(self, _=None):
         """Show UI screens at a consistent interval."""
+        if connected():
+            return
         steps = [
             self.prompt_to_join_ap,
             self.prompt_to_sign_in_to_ap,
