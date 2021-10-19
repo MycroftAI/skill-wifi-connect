@@ -25,15 +25,12 @@ import Mycroft 1.0 as Mycroft
 Mycroft.ProportionalDelegate {
     id: root
     property var spacingUnit: 30
-    property var phone: sessionData.phone_image3
-    property var prompt: sessionData.prompt3
-    property var highlight: sessionData.highlight3 || ""
 
     Row {
         spacing: spacingUnit
         Image {
             id: img
-            source: Qt.resolvedUrl(phone)
+            source: Qt.resolvedUrl("images/follow-prompt.png")
             Layout.fillHeight: true
             height: root.height * 0.8
             fillMode: Image.PreserveAspectFit
@@ -50,28 +47,11 @@ Mycroft.ProportionalDelegate {
                 horizontalAlignment: Text.AlignHLeft
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
-                font.family: "Noto Sans"
                 font.bold: true
                 font.weight: Font.Bold
                 font.pixelSize: 38
                 visible: !content.visible
-                text: prompt
-            }
-            Kirigami.Heading {
-                id: url
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignLeft
-                Layout.leftMargin: spacingUnit
-                horizontalAlignment: Text.AlignHLeft
-                wrapMode: Text.WordWrap
-                elide: Text.ElideRight
-                font.family: "Noto Sans"
-                font.bold: true
-                font.weight: Font.Bold
-                font.pixelSize: 36
-                visible: !content.visible
-                color: "#22a7f0"
-                text: highlight
+                text: "Follow the prompt on your mobile device or computer"
             }
         }
     }

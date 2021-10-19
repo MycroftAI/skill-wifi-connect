@@ -1,20 +1,28 @@
+# Copyright 2020 Mycroft AI Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+"""Mycroft skill for joining a device to a WiFi network."""
 from time import sleep
 
-from mycroft import MycroftSkill, intent_handler
 from mycroft.audio import stop_speaking, wait_while_speaking
 from mycroft.identity import IdentityManager
-from mycroft.messagebus.message import Message
+from mycroft.messagebus import Message
+from mycroft.skills import MycroftSkill, intent_handler
 from mycroft.util import connected
 
 
-# Mycroft Colors
-blue = "#22A7F0"
-blue_dark = "#2C3E50"
-blue_pale = "#8CE0FE"
-green = "#40DBB0"
-yellow = "#FEE255"
-orange = "#FD9E66"
-red = "#D81159"
+MARK_II = 'mycroft_mark_2'
 
 def has_paired_before() -> bool:
     """Simple check for whether a device has previously been paired.
@@ -27,8 +35,18 @@ def has_paired_before() -> bool:
     return identity.uuid != ""
 
 class WifiConnect(MycroftSkill):
+    """Skill that joins a device to a WiFi network.
+
+    Attributes:
+        page_showing: on a GUI enabled device, the page being displayed
+    """
     def __init__(self):
-        MycroftSkill.__init__(self)
+        super().__init__()
+        self.page_showing = None
+
+    @property
+    def platform(self):
+        return self.config_core['enclosure'].get('platform', 'unknown')
 
     def initialize(self):
         """Create event handlers"""
@@ -58,7 +76,7 @@ class WifiConnect(MycroftSkill):
             self.show_all_screens()
 
     @intent_handler("test.intent")
-    def show_all_screens(self, _=None):
+    def show_all_screens(self, _):
         """Show UI screens at a consistent interval."""
         steps = [
             self.prompt_to_join_ap,
@@ -83,61 +101,53 @@ class WifiConnect(MycroftSkill):
             else:
                 sleep(2)
 
-
-    def prompt_to_join_ap(self, _=None):
+    def prompt_to_join_ap(self):
         """Prompt user to join temporary access point."""
         self.speak_dialog("1_ap.created_speech")
-        self.gui["phone_image1"] = "1_phone_connect-to-ap.png"
-        self.gui["prompt1"] = "Connect to the \nWifi network"
-        self.gui["highlight1"] = "Mycroft"
-        self.gui.show_page("prompt1.qml", override_idle=True)
+        self._show_page("access_point_select")
 
-    def prompt_to_sign_in_to_ap(self, _=None):
+    def prompt_to_sign_in_to_ap(self):
         """Prompt user to sign into access point."""
-        self.speak_dialog("2a_sign.in.to.ap_speech")
-        self.gui["phone_image2"] = "2_phone_follow-prompt.png"
-        self.gui["prompt2"] = "Follow the \nprompt on your \nmobile device or \ncomputer"
-        self.gui.show_page("prompt2.qml")
-        wait_while_speaking()
+        self._show_page("follow_prompt")
+        self.speak_dialog("2a_sign.in.to.ap_speech", wait=True)
         self.speak_dialog("2b_sign.in.to.ap_speech")
-        self.gui["prompt2"] = "If you don't get \na prompt, go to \nstart.mycroft.ai"
-        self.gui["phone_image2"] = "3_phone_choose-wifi.png"
 
-    def prompt_to_select_network(self, _=None):
+    def prompt_to_select_network(self):
         """Prompt user to select network and login."""
-        self.gui["phone_image3"] = "3_phone_choose-wifi.png"
-        self.gui["prompt3"] = "Choose the \nWifi network to \nconnect your \nMycroft device"
-        self.gui.show_page("prompt3.qml")
+        self._show_page("network_select")
 
     def check_connection(self):
+        """Determine if the device connected successfully."""
         is_connected = connected()
         if is_connected:
             stop_speaking()
             self.report_setup_complete()
         return is_connected
 
-    def report_setup_complete(self, _=None):
+    def report_setup_complete(self):
         """Report when wifi setup is complete, network is connected."""
-        # self.speak_dialog("4_internet.connected_speech")
-        self.gui["bgColor"] = green
-        self.gui["icon"] = "check-circle.svg"
         self.gui["label"] = self.translate("4_internet.connected_screen")
-        self.gui.remove_page("prompt1.qml")
-        self.gui.remove_page("prompt2.qml")
-        self.gui.remove_page("prompt3.qml")
-        self.gui.show_page("status.qml")
-        # wait_while_speaking()
+        self.gui.show_page("wifi_success_scalable.qml")
         sleep(5)
         self.gui.release()
         self.bus.emit(Message('mycroft.ready'))
 
-    def report_error(self, _=None):
-        """Report if an error occured during wifi setup."""
-        self.gui.remove_page("prompt.qml")
-        self.gui["bgColor"] = red
-        self.gui["icon"] = "times-circle.svg"
-        self.gui["label"] = "Incorrect password"
-        self.gui.show_page("status.qml")
+    def _show_page(self, page_name_prefix: str):
+        """Shows the appropriate screen for the device's platform.
+
+        Args:
+            page_name_prefix: part of the page name not platform-specific
+        """
+        if self.gui.connected:
+            if self.platform == MARK_II:
+                page_name_suffix = "_mark_ii"
+            else:
+                page_name_suffix = "_scalable"
+            page_name = page_name_prefix + page_name_suffix + ".qml"
+            if self.page_showing is not None:
+                self.gui.remove_page(self.page_showing)
+            self.gui.show_page(page_name, override_idle=True)
+            self.page_showing = page_name
 
 
 def create_skill():
