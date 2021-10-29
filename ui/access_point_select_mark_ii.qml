@@ -21,7 +21,7 @@ import QtQuick.Layouts 1.4
 
 import Mycroft 1.0 as Mycroft
 
-/* Define a screen instructing user to a URL for pairing */
+/* Define a screen instructing user connect to the MYCROFT access point */
 Mycroft.Delegate {
     id: root
     leftPadding: 0
@@ -31,13 +31,13 @@ Mycroft.Delegate {
     property int gridUnit: Mycroft.Units.gridUnit
 
     Rectangle {
-        id: followPromptBackground
+        id: accessPointSelectBackground
         anchors.fill: parent
         color: "#000000"
 
         // Image of mobile phone with wifi networks and MYCROFT access point.
-        PairingImage {
-            id: followPromptImage
+        WifiImage {
+            id: accessPointSelectImage
             anchors.left: parent.left
             anchors.leftMargin: gridUnit * 2
             anchors.top: parent.top
@@ -47,12 +47,13 @@ Mycroft.Delegate {
             imageSource: "images/access-point-select.png"
         }
 
+        // Text instructing the user to select the MYCROFT access point
         Item {
-            id: followPromptText
-            anchors.left: pairingPhone.right
-            anchors.leftMargin: gridUnit * 2
+            id: accessPointSelectText
+            anchors.left: accessPointSelectImage.right
+            anchors.leftMargin: gridUnit * 3
             anchors.top: parent.top
-            anchors.topMargin: gridUnit * 9
+            anchors.topMargin: gridUnit * 8
             width: gridUnit * 21
 
             WifiLabel {

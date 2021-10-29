@@ -36,7 +36,7 @@ Mycroft.Delegate {
         color: "#000000"
 
         // Image of mobile phone with wifi networks and MYCROFT access point.
-        PairingImage {
+        WifiImage {
             id: networkSelectImage
             anchors.left: parent.left
             anchors.leftMargin: gridUnit * 2
@@ -49,10 +49,10 @@ Mycroft.Delegate {
 
         Item {
             id: networkSelectText
-            anchors.left: pairingPhone.right
-            anchors.leftMargin: gridUnit * 2
+            anchors.left: networkSelectImage.right
+            anchors.leftMargin: gridUnit * 4
             anchors.top: parent.top
-            anchors.topMargin: gridUnit * 6
+            anchors.topMargin: gridUnit * 5
             width: gridUnit * 21
 
             WifiLabel {

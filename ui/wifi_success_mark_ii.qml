@@ -47,14 +47,15 @@ Mycroft.Delegate {
         }
 
         Item {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: wifiSuccessImage.bottom
+            anchors.topMargin: gridUnit
             height: gridUnit * 3
             width: gridUnit * 21
 
             Label {
                 id: wifiLabel
                 anchors.baseline: parent.bottom
-                anchors.topMargin: gridUnit
-                anchors.horizontalCenter: parent.horizontalCenter
                 font.pixelSize: 59
                 font.styleName: "Bold"
                 text: "Connected"

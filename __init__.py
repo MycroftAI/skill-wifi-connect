@@ -15,7 +15,7 @@
 """Mycroft skill for joining a device to a WiFi network."""
 from time import sleep
 
-from mycroft.audio import stop_speaking, wait_while_speaking
+from mycroft.audio import stop_speaking
 from mycroft.identity import IdentityManager
 from mycroft.messagebus import Message
 from mycroft.skills import MycroftSkill, intent_handler
@@ -43,6 +43,7 @@ class WifiConnect(MycroftSkill):
     def __init__(self):
         super().__init__()
         self.page_showing = None
+        self.connected_to_internet = False
 
     @property
     def platform(self):
@@ -73,61 +74,83 @@ class WifiConnect(MycroftSkill):
             # Give the GUI and Wifi Connect time to get started.
             sleep(5)
         if not connected():
-            self.show_all_screens()
+            self.connect_to_wifi()
 
-    @intent_handler("test.intent")
-    def show_all_screens(self, _):
-        """Show UI screens at a consistent interval."""
+    @intent_handler("test-gui.intent")
+    def test_gui(self, _):
+        """Show GUI screens at a consistent interval.
+
+        Testing wifi setup is difficult because the device must be in a certain state
+        for this skill to activate.  This method allows a developer to test changes to
+        the GUI without the difficulty of getting the device in a wifi setup state.
+        """
+        pages = [
+            "access_point_select", "follow_prompt", "network_select", "wifi_success"
+        ]
+        for page in pages:
+            self._show_page(page)
+            sleep(10)
+
+    def connect_to_wifi(self):
+        """Connect the device to a wifi network.
+
+        Mycroft devices need an internet connection for various purposes, such as
+        communicating with Selene.  If a device is already connected to the internet,
+        this setup logic should be skipped.
+        """
+        step_timeout = 8
+        self.schedule_repeating_event(
+            self._check_for_internet_connection,
+            when=None,
+            frequency=2,
+            name="InternetConnectCheck"
+        )
         steps = [
-            self.prompt_to_join_ap,
-            self.prompt_to_sign_in_to_ap,
-            self.prompt_to_select_network,
+            self._prompt_to_select_access_point,
+            self._prompt_to_select_wifi_network,
+            self._display_select_wifi_network,
         ]
         for step in steps:
-            if connected():
+            if self.connected_to_internet:
                 break
             step()
-            for sec in range(8):
-                if self.check_connection():
-                    return
-                else:
-                    sleep(1)
-            wait_while_speaking()
+            sleep_duration = 0
+            while not self.connected_to_internet and sleep_duration < step_timeout:
+                sleep(1)
+                sleep_duration += 1
 
+        while not self.connected_to_internet:
+            self.log.debug("No internet connection detected, waiting...")
+            sleep(2)
 
-        while True:
-            if self.check_connection():
-                return
-            else:
-                sleep(2)
+        self.cancel_scheduled_event("InternetConnectCheck")
+        self._report_setup_complete()
 
-    def prompt_to_join_ap(self):
+    def _prompt_to_select_access_point(self):
         """Prompt user to join temporary access point."""
-        self.speak_dialog("1_ap.created_speech")
         self._show_page("access_point_select")
+        self.speak_dialog("access_point_created", wait=True)
 
-    def prompt_to_sign_in_to_ap(self):
+    def _prompt_to_select_wifi_network(self):
         """Prompt user to sign into access point."""
         self._show_page("follow_prompt")
-        self.speak_dialog("2a_sign.in.to.ap_speech", wait=True)
-        self.speak_dialog("2b_sign.in.to.ap_speech")
+        self.speak_dialog("choose-wifi-network", wait=True)
+        self.speak_dialog("no-prompt", wait=True)
 
-    def prompt_to_select_network(self):
+    def _display_select_wifi_network(self):
         """Prompt user to select network and login."""
         self._show_page("network_select")
 
-    def check_connection(self):
+    def _check_for_internet_connection(self):
         """Determine if the device connected successfully."""
-        is_connected = connected()
-        if is_connected:
+        self.connected_to_internet = connected()
+        if self.connected_to_internet:
             stop_speaking()
-            self.report_setup_complete()
-        return is_connected
 
-    def report_setup_complete(self):
+    def _report_setup_complete(self):
         """Report when wifi setup is complete, network is connected."""
-        self.gui["label"] = self.translate("4_internet.connected_screen")
-        self.gui.show_page("wifi_success_scalable.qml")
+        self.gui["label"] = self.translate("connected")
+        self._show_page("wifi_success")
         sleep(5)
         self.gui.release()
         self.bus.emit(Message('mycroft.ready'))

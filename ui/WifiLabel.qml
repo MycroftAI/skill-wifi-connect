@@ -33,20 +33,17 @@ import QtQuick.Controls 2.3
 import QtGraphicalEffects 1.0
 
 Item {
-    property alias fontSize: wifiLabel.font.pixelSize
-    property alias fontStyle: wifiLabel.font.styleName
     property alias text: wifiLabel.text
     property color textColor: "#FFFFFF"
 
-    height: gridUnit * 3
+    height: gridUnit * 4
     width: gridUnit * 21
 
     Label {
         id: wifiLabel
         anchors.baseline: parent.bottom
-        anchors.topMargin: gridUnit
         color: textColor
-        fontSize: 47
-        fontStyle: "Bold"
+        font.pixelSize: 47
+        font.styleName: "Bold"
     }
 }
