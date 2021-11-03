@@ -20,7 +20,7 @@ Mycroft.ProportionalDelegate {
             anchors.horizontalCenter: grid.horizontalCenter
             Layout.preferredWidth: proportionalGridUnit * 50
             Layout.preferredHeight: proportionalGridUnit * 50
-            source: Qt.resolvedUrl(`icons/${sessionData.icon}`)
+            source: Qt.resolvedUrl("images/success.svg")
         }
 
         /* Add some spacing between icon and text */
@@ -34,7 +34,6 @@ Mycroft.ProportionalDelegate {
             font.pixelSize: 65
             wrapMode: Text.WordWrap
             renderType: Text.NativeRendering
-            font.family: "Noto Sans Display"
             font.styleName: "Black"
             font.capitalization: Font.AllUppercase
             text: sessionData.label
