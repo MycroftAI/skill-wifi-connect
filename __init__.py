@@ -57,12 +57,12 @@ class WifiConnect(MycroftSkill):
         """Create event handlers"""
 
         self.add_event(
-            "system.wifi.setup.hotspot_activated",
+            "system.wifi.setup.hotspot-activated",
             self._prompt_to_select_access_point,
         )
 
         self.add_event(
-            "system.wifi.setup.hotspot_connected",
+            "system.wifi.setup.hotspot-connected",
             self._prompt_to_select_wifi_network,
         )
 
@@ -134,13 +134,13 @@ class WifiConnect(MycroftSkill):
             self.log.info("Mycroft hotspot activated")
 
             # Mycroft hotspot is active
-            self.bus.emit(Message("system.wifi.setup.hotspot_activated"))
+            self.bus.emit(Message("system.wifi.setup.hotspot-activated"))
 
             # TODO: Any way to detect connection from client?
             await asyncio.sleep(10)
 
             # User has connected to hotspot
-            self.bus.emit(Message("system.wifi.setup.hotspot_connected"))
+            self.bus.emit(Message("system.wifi.setup.hotspot-connected"))
 
             # Now wait for hotspot to go away (user has entered # credentials)
             self.log.info("Waiting for Mycroft hotspot to deactivate")
@@ -219,7 +219,6 @@ class WifiConnect(MycroftSkill):
         self._show_page("wifi_success")
         sleep(5)
         self.gui.release()
-        self.bus.emit(Message("mycroft.ready"))
 
     def _show_page(self, page_name_prefix: str):
         """Shows the appropriate screen for the device's platform.
