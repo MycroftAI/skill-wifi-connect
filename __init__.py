@@ -23,13 +23,6 @@ from mycroft.skills import MycroftSkill, intent_handler
 
 MARK_II = "mycroft_mark_2"
 
-# NetworkManager constants
-NM_DEVICE_TYPE_WIFI = 2
-
-NM_802_11_MODE_UNKNOWN = 0
-NM_802_11_MODE_AP = 3
-
-
 class WifiConnect(MycroftSkill):
     """Skill that joins a device to a WiFi network.
 
@@ -48,7 +41,6 @@ class WifiConnect(MycroftSkill):
 
     def initialize(self):
         """Create event handlers"""
-
         self.add_event(
             "system.wifi.setup.hotspot-activated",
             self._prompt_to_select_access_point,
