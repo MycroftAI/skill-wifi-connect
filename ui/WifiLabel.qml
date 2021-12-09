@@ -35,6 +35,7 @@ import QtGraphicalEffects 1.0
 Item {
     property alias text: wifiLabel.text
     property color textColor: "#FFFFFF"
+    property bool center: False
 
     height: gridUnit * 4
     width: gridUnit * 21
@@ -42,6 +43,7 @@ Item {
     Label {
         id: wifiLabel
         anchors.baseline: parent.bottom
+        anchors.horizontalCenter: center ? parent.horizontalCenter : undefined
         color: textColor
         font.pixelSize: 47
         font.styleName: "Bold"
