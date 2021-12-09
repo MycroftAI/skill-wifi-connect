@@ -32,27 +32,36 @@ Mycroft.Delegate {
     Rectangle {
         id: background
         anchors.fill: parent
-        color: "#40dbb0"
+        color: "#EB5757"
 
         // Image of a check mark indicating success.
         WifiImage {
-            id: wifiSuccessImage
+            id: wifiFailureImage
             anchors.left: parent.left
             anchors.leftMargin: gridUnit * 15
             anchors.top: parent.top
             anchors.topMargin: gridUnit * 2
             heightUnits: 20
+            imageSource: "images/failure.svg"
             widthUnits: 20
-            imageSource: "images/success.svg"
+        }
+
+
+        WifiLabel {
+            id: textFirstLine
+            anchors.top: wifiFailureImage.bottom
+            center: true
+            height: gridUnit * 3
+            text: "Connection failed"
+            width: parent.width
         }
 
         WifiLabel {
-            id: wifiSuccessLabel
-            anchors.top: wifiSuccessImage.bottom
-            anchors.topMargin: gridUnit
+            id: textSecondLine
+            anchors.top: wifiFailureOne.bottom
             center: true
             height: gridUnit * 3
-            text: "Connected"
+            text: "Wi-Fi setup is restarting"
             width: parent.width
         }
     }
