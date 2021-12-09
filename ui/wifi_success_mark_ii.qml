@@ -46,20 +46,14 @@ Mycroft.Delegate {
             imageSource: "images/success.svg"
         }
 
-        Item {
-            anchors.horizontalCenter: parent.horizontalCenter
+        WifiLabel {
+            id: wifiSuccessLabel
             anchors.top: wifiSuccessImage.bottom
             anchors.topMargin: gridUnit
+            center: true
             height: gridUnit * 3
-            width: gridUnit * 21
-
-            Label {
-                id: wifiLabel
-                anchors.baseline: parent.bottom
-                font.pixelSize: 59
-                font.styleName: "Bold"
-                text: "Connected"
-            }
+            text: "Connected"
+            width: parent.width
         }
     }
 }

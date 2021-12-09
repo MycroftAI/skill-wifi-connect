@@ -36,45 +36,31 @@ Mycroft.Delegate {
         color: "#000000"
 
         // Text instructing the user to wait while the wifi connection is attempted
-        Item {
-            id: firstLine
+        WifiLabel {
+            id: textFirstLine
             anchors.top: parent.top
             anchors.topMargin: gridUnit * 8
+            center: true
             height: gridUnit * 3
+            text: "Attempting to"
             width: parent.width
-
-            Label {
-                id: firstLineText
-                anchors.baseline: parent.bottom
-                anchors.horizontalCenter: parent.horizontalCenter
-                font.pixelSize: 47
-                font.styleName: "Bold"
-                text: "Attempting to"
-            }
         }
 
-        Item {
-            id: secondLine
-            anchors.top: firstLine.bottom
+        WifiLabel {
+            id: textSecondLine
+            anchors.top: textFirstLine.bottom
             anchors.topMargin: gridUnit
+            center: true
             height: gridUnit * 3
+            text: "connect to Wi-Fi"
             width: parent.width
-
-            Label {
-                id: secondLineText
-                anchors.baseline: parent.bottom
-                anchors.horizontalCenter: parent.horizontalCenter
-                font.pixelSize: 47
-                font.styleName: "Bold"
-                text: "connect to Wi-Fi"
-            }
         }
 
         // Indeterminate progress bar to show work is being done in the background.
         ProgressBar {
             id: connectionProgress
             anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: secondLine.bottom
+            anchors.top: textSecondLine.bottom
             anchors.topMargin: gridUnit * 4
             height: gridUnit
             indeterminate: true
