@@ -58,7 +58,7 @@ Mycroft.Delegate {
 
         WifiLabel {
             id: textSecondLine
-            anchors.top: wifiFailureOne.bottom
+            anchors.top: textFirstLine.bottom
             center: true
             height: gridUnit * 3
             text: "Wi-Fi setup is restarting"
