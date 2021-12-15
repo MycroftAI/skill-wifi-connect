@@ -25,15 +25,6 @@ from mycroft.skills import MycroftSkill, intent_handler
 MARK_II = "mycroft_mark_2"
 
 
-class State(str, Enum):
-    """State of the wifi-connect skill"""
-
-    IDLE = "idle"
-    ACTIVATING_HOTSPOT = "activating-hotspot"
-    WAITING_FOR_PASSWORD = "waiting-for-password"
-    CONNECTING_TO_WIFI = "connecting-to-wifi"
-
-
 class WifiConnect(MycroftSkill):
     """Skill that joins a device to a WiFi network.
 
@@ -45,7 +36,7 @@ class WifiConnect(MycroftSkill):
         super().__init__()
         self.page_showing = None
 
-        self.state: State = State.IDLE
+        self._is_attempting_wifi_connection = False
 
     @property
     def platform(self):
@@ -54,109 +45,102 @@ class WifiConnect(MycroftSkill):
     def initialize(self):
         """Create event handlers"""
 
-        # Trigger condition for skill
+        # 1. Network detection fails
         self.add_event(
             "hardware.network-not-detected", self._handle_network_not_detected
         )
 
-        self.add_event("system.wifi.setup.started", self._handle_started)
-
-        # Hotspot has been created
+        # 2. Mycroft access point is ready
         self.add_event(
-            "system.wifi.setup.hotspot-activated",
-            self._handle_hotspot_activated,
+            "hardware.awconnect.ap-activated",
+            self._handle_ap_activated,
         )
 
-        # User has connected to portal page
+        # 3. User has connected to captive portal page
         self.add_event(
-            "system.wifi.setup.hotspot-connected",
-            self._handle_hotspot_connected,
+            "hardware.awconnect.portal-viewed",
+            self._handle_portal_viewed,
         )
 
-        # User has selected an access point
+        # 4. User has entered wifi credentials
         self.add_event(
-            "system.wifi.setup.hotspot-selected",
-            self._handle_hotspot_selected,
+            "hardware.awconnect.credentials-entered",
+            self._handle_credentials_entered,
         )
 
-        # Hotspot removed so wifi connection can be attempted
+        # 5. Access point is deactivated, network detection is attempted again
         self.add_event(
-            "system.wifi.setup.hotspot-deactivated",
-            self._handle_hotspot_deactivated,
+            "hardware.awconnect.ap-deactivated",
+            self._handle_ap_deactivated,
         )
 
-        # Error condition
-        self.add_event("system.wifi.setup.failed", self._handle_setup_failed)
-
-        # Success condition for skill
+        # 6. Network detection succeeds
         self.add_event(
             "hardware.network-detected", self._handle_network_detected
         )
 
-        # Setup is complete
-        self.add_event(
-            "system.wifi.setup.connected", self._handle_setup_connected
-        )
-
-    # -------------------------------------------------------------------------
-
     def _handle_network_not_detected(self, _message=None):
-        if self.state == State.IDLE:
-            # First run of the skill
-            self.bus.emit(Message("system.wifi.setup.started"))
-        elif self.state == State.CONNECTING_TO_WIFI:
-            # WiFi connection attempt failed
-            self.bus.emit(Message("system.wifi.setup.failed"))
+        """Triggers skill to start"""
+        self._start_wifi_setup()
 
-    def _handle_started(self, _message=None):
-        if self.state == State.IDLE:
-            self.state = State.ACTIVATING_HOTSPOT
-            self.bus.emit(Message("system.wifi.setup.create-hotspot"))
+    def _handle_ap_activated(self, _message=None):
+        """Mycroft access point is ready in awconnect"""
+        if self._is_attempting_wifi_connection:
+            self._wifi_setup_failed()
 
-    def _handle_hotspot_activated(self, _message=None):
-        if self.state == State.ACTIVATING_HOTSPOT:
-            self.state = State.WAITING_FOR_PASSWORD
-            self._prompt_to_select_access_point()
-            self._display_select_wifi_network()
+            # Setup will automatically start again
+            self.log.info("Restarting Wi-Fi setup")
+            self._is_attempting_wifi_connection = False
 
-    def _handle_hotspot_selected(self, _message=None):
-        if self.state == State.WAITING_FOR_PASSWORD:
-            self.state = State.CONNECTING_TO_WIFI
+        self._access_point_ready()
 
-            # Inform user that connection is being attempted
-            self._show_connecting_page()
+    def _handle_portal_viewed(self, _message=None):
+        """User has connected to access point and visited captive portal page"""
+        self._portal_page_viewed()
 
-    def _handle_hotspot_deactivated(self, _message=None):
-        if self.state == State.CONNECTING_TO_WIFI:
-            # Request network detection from enclosure
-            self.bus.emit(Message("hardware.detect-network"))
+    def _handle_credentials_entered(self, _message=None):
+        """User has selected their wifi network and entered a password"""
+        self._wifi_credentials_entered()
 
-    def _handle_hotspot_connected(self, _message=None):
-        if self.state == State.WAITING_FOR_PASSWORD:
-            self._prompt_to_select_wifi_network()
-
-    def _handle_setup_failed(self, _message=None):
-        self.log.info("Wi-Fi setup failed")
-
-        if self.state == State.CONNECTING_TO_WIFI:
-            self.state = State.IDLE
-            self._show_failure_page()
-
-            # Start over
-            self.bus.emit(Message("system.wifi.setup.started"))
+    def _handle_ap_deactivated(self, _message=None):
+        """Access point has deactivated (wifi success)"""
+        # Request another network detection from enclosure
+        self.bus.emit(Message("hardware.detect-network"))
 
     def _handle_network_detected(self, _message=None):
-        if self.state == State.CONNECTING_TO_WIFI:
-            # WiFi setup succeeded
-            self.bus.emit(Message("system.wifi.setup.connected"))
+        """Network detection succeeded after setup"""
+        self._wifi_setup_succeeded()
+        self._wifi_setup_ended()
 
-    def _handle_setup_connected(self, _message=None):
+    def _start_wifi_setup(self):
+        self._is_attempting_wifi_connection = False
+        self.bus.emit(Message("system.wifi.setup.started"))
+
+        # Request to enclosure to start activity
+        self.bus.emit(Message("hardware.awconnect.create-ap"))
+
+    def _access_point_ready(self):
+        self._prompt_to_select_access_point()
+
+    def _portal_page_viewed(self):
+        self._prompt_to_select_wifi_network()
+
+    def _wifi_credentials_entered(self):
+        self._is_attempting_wifi_connection = True
+        self._show_connecting_page()
+
+    def _wifi_setup_succeeded(self):
         self.log.info("Wi-Fi setup succeeded")
-
-        self.state = State.IDLE
-        self.bus.emit(Message("system.wifi.setup.ended"))
-
         self._report_setup_complete()
+        self.bus.emit(Message("system.wifi.setup.connected"))
+
+    def _wifi_setup_failed(self):
+        self.log.info("Wi-Fi setup failed")
+        self._show_failure_page()
+        self.bus.emit(Message("system.wifi.setup.failed"))
+
+    def _wifi_setup_ended(self):
+        self.bus.emit(Message("system.wifi.setup.ended"))
 
     # -------------------------------------------------------------------------
 
@@ -167,13 +151,9 @@ class WifiConnect(MycroftSkill):
 
     def _prompt_to_select_wifi_network(self):
         """Prompt user to sign into access point."""
-        self._show_page("follow_prompt")
+        self._show_page("network_select")
         self.speak_dialog("choose-wifi-network", wait=True)
         self.speak_dialog("no-prompt", wait=True)
-
-    def _display_select_wifi_network(self):
-        """Prompt user to select network and login."""
-        self._show_page("network_select")
 
     def _show_connecting_page(self, _message=None):
         """Inform user that wifi connection is being attempted"""
