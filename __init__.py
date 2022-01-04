@@ -35,14 +35,9 @@ def has_paired_before() -> bool:
     return identity.uuid != ""
 
 class WifiConnect(MycroftSkill):
-    """Skill that joins a device to a WiFi network.
-
-    Attributes:
-        page_showing: on a GUI enabled device, the page being displayed
-    """
+    """Skill that joins a device to a WiFi network."""
     def __init__(self):
         super().__init__()
-        self.page_showing = None
         self.connected_to_internet = False
 
     @property
@@ -164,13 +159,12 @@ class WifiConnect(MycroftSkill):
         if self.gui.connected:
             if self.platform == MARK_II:
                 page_name_suffix = "_mark_ii"
+                page_name = page_name_prefix + page_name_suffix + ".qml"
+                self.gui.replace_page(page_name, override_idle=True)
             else:
                 page_name_suffix = "_scalable"
-            page_name = page_name_prefix + page_name_suffix + ".qml"
-            if self.page_showing is not None:
-                self.gui.remove_page(self.page_showing)
-            self.gui.show_page(page_name, override_idle=True)
-            self.page_showing = page_name
+                page_name = page_name_prefix + page_name_suffix + ".qml"
+                self.gui.show_page(page_name, override_idle=True)
 
 
 def create_skill():
