@@ -35,8 +35,8 @@ class WifiConnect(MycroftSkill):
     def __init__(self):
         super().__init__()
         self.page_showing = None
-
         self._is_attempting_wifi_connection = False
+        self._wifi_setup_started = False
 
     @property
     def platform(self):
@@ -109,10 +109,13 @@ class WifiConnect(MycroftSkill):
 
     def _handle_network_detected(self, _message=None):
         """Network detection succeeded after setup"""
-        self._wifi_setup_succeeded()
-        self._wifi_setup_ended()
+        if self._wifi_setup_started:
+            self._wifi_setup_started = False
+            self._wifi_setup_succeeded()
+            self._wifi_setup_ended()
 
     def _start_wifi_setup(self):
+        self._wifi_setup_started = True
         self._is_attempting_wifi_connection = False
         self.bus.emit(Message("system.wifi.setup.started"))
 
