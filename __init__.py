@@ -26,15 +26,10 @@ MARK_II = "mycroft_mark_2"
 
 
 class WifiConnect(MycroftSkill):
-    """Skill that joins a device to a WiFi network.
-
-    Attributes:
-        page_showing: on a GUI enabled device, the page being displayed
-    """
+    """Skill that joins a device to a WiFi network."""
 
     def __init__(self):
         super().__init__()
-        self.page_showing = None
         self._is_attempting_wifi_connection = False
         self._wifi_setup_started = False
 
@@ -44,6 +39,7 @@ class WifiConnect(MycroftSkill):
 
     def initialize(self):
         """Create event handlers"""
+        self.add_event("mycroft.started", self._handle_mycroft_started)
 
         # 1. Network detection fails
         self.add_event(
@@ -78,6 +74,9 @@ class WifiConnect(MycroftSkill):
         self.add_event(
             "hardware.network-detected", self._handle_network_detected
         )
+
+    def _handle_mycroft_started(self):
+        self._show_page("connecting_to_internet")
 
     def _handle_network_not_detected(self, _message=None):
         """Triggers skill to start"""
@@ -145,8 +144,6 @@ class WifiConnect(MycroftSkill):
     def _wifi_setup_ended(self):
         self.bus.emit(Message("system.wifi.setup.ended"))
 
-    # -------------------------------------------------------------------------
-
     def _prompt_to_select_access_point(self):
         """Prompt user to join temporary access point."""
         self._show_page("access_point_select")
@@ -174,8 +171,6 @@ class WifiConnect(MycroftSkill):
         sleep(5)
         self.gui.release()
 
-    # -------------------------------------------------------------------------
-
     def _show_page(self, page_name_prefix: str):
         """Shows the appropriate screen for the device's platform.
 
@@ -184,14 +179,11 @@ class WifiConnect(MycroftSkill):
         """
         if self.gui.connected:
             if self.platform == MARK_II:
-                page_name_suffix = "_mark_ii"
+                page_name = page_name_prefix + "_mark_ii.qml"
+                self.gui.replace_page(page_name, override_idle=True)
             else:
-                page_name_suffix = "_scalable"
-            page_name = page_name_prefix + page_name_suffix + ".qml"
-            if self.page_showing is not None:
-                self.gui.remove_page(self.page_showing)
-            self.gui.show_page(page_name, override_idle=True)
-            self.page_showing = page_name
+                page_name = page_name_prefix + "_scalable.qml"
+                self.gui.show_page(page_name, override_idle=True)
 
 
 def create_skill():
