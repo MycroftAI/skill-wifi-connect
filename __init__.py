@@ -20,6 +20,7 @@ from mycroft.audio import stop_speaking
 from mycroft.identity import IdentityManager
 from mycroft.messagebus import Message
 from mycroft.skills import MycroftSkill, intent_handler
+from mycroft.util.network_utils import check_captive_portal
 
 
 MARK_II = "mycroft_mark_2"
@@ -41,6 +42,9 @@ class WifiConnect(MycroftSkill):
         """Create event handlers"""
         self.add_event("mycroft.started", self._handle_mycroft_started)
 
+        # Captive portal
+        self.add_event("hardware.portal-detected", self._handle_portal_detected)
+
         # 1. Network detection fails
         self.add_event(
             "hardware.network-not-detected", self._handle_network_not_detected
@@ -48,32 +52,26 @@ class WifiConnect(MycroftSkill):
 
         # 2. Mycroft access point is ready
         self.add_event(
-            "hardware.awconnect.ap-activated",
-            self._handle_ap_activated,
+            "hardware.awconnect.ap-activated", self._handle_ap_activated,
         )
 
         # 3. User has connected to captive portal page
         self.add_event(
-            "hardware.awconnect.portal-viewed",
-            self._handle_portal_viewed,
+            "hardware.awconnect.portal-viewed", self._handle_portal_viewed,
         )
 
         # 4. User has entered wifi credentials
         self.add_event(
-            "hardware.awconnect.credentials-entered",
-            self._handle_credentials_entered,
+            "hardware.awconnect.credentials-entered", self._handle_credentials_entered,
         )
 
         # 5. Access point is deactivated, network detection is attempted again
         self.add_event(
-            "hardware.awconnect.ap-deactivated",
-            self._handle_ap_deactivated,
+            "hardware.awconnect.ap-deactivated", self._handle_ap_deactivated,
         )
 
         # 6. Network detection succeeds
-        self.add_event(
-            "hardware.network-detected", self._handle_network_detected
-        )
+        self.add_event("hardware.network-detected", self._handle_network_detected)
 
     def _handle_mycroft_started(self):
         self._show_page("connecting_to_internet")
@@ -184,6 +182,32 @@ class WifiConnect(MycroftSkill):
             else:
                 page_name = page_name_prefix + "_scalable.qml"
                 self.gui.show_page(page_name, override_idle=True)
+
+    def _handle_portal_detected(self, _message):
+        """Called when a captive portal is detected.
+
+        We show a known (non-HTTPS) URL in a web browser so the user can see the
+        page and login.
+
+        We periodically check to see if the captive portal is still present, and
+        if not, clear the GUI and continue the wifi setup process.
+        """
+        self.log.info("Showing browser for captive portal login")
+        self.cancel_scheduled_event("CheckPortal")
+        self.gui.show_url("http://neverssl.com", override_idle=True)
+        self.schedule_repeating_event(
+            self._check_portal, when=3, frequency=2, name="CheckPortal"
+        )
+        self.speak_dialog("login")
+
+    def _check_portal(self):
+        self.log.info("Checking if captive portal is still active")
+
+        if not check_captive_portal():
+            self.log.info("Captive portal is no longer active")
+            self.cancel_scheduled_event("CheckPortal")
+            self.bus.emit(Message("hardware.detect-network"))
+            self.gui.release()
 
 
 def create_skill():
