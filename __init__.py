@@ -194,7 +194,7 @@ class WifiConnect(MycroftSkill):
         """
         self.log.info("Showing browser for captive portal login")
         self.cancel_scheduled_event("CheckPortal")
-        self.gui.show_url("http://neverssl.com", override_idle=True)
+        self.gui.show_url("http://start.mycroft.ai/portal-check.html", override_idle=True)
         self.schedule_repeating_event(
             self._check_portal, when=3, frequency=2, name="CheckPortal"
         )
