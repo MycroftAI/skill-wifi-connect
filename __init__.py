@@ -73,10 +73,10 @@ class WifiConnect(MycroftSkill):
         # 6. Network detection succeeds
         self.add_event("hardware.network-detected", self._handle_network_detected)
 
-    def get_intro_message(self):
-        return self.translate("greeting")
-
     def _handle_mycroft_started(self):
+        if self.settings["__mycroft_skill_firstrun"]:
+            # This is the first time the Skill has ever run.
+            self.speak_dialog("greeting")
         self._show_page("connecting_to_internet")
 
     def _handle_network_not_detected(self, _message=None):
