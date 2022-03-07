@@ -33,6 +33,7 @@ class WifiConnect(MycroftSkill):
         super().__init__()
         self._is_attempting_wifi_connection = False
         self._wifi_setup_started = False
+        self.first_ever_run = None
 
     @property
     def platform(self):
@@ -40,6 +41,10 @@ class WifiConnect(MycroftSkill):
 
     def initialize(self):
         """Create event handlers"""
+        # This setting will be set to True after first init.
+        # We need to retain its state for the first boot greeting.
+        self.first_ever_run = self.settings.get("__mycroft_skill_firstrun", True)
+
         self.add_event("mycroft.started", self._handle_mycroft_started)
 
         # Captive portal
@@ -78,6 +83,11 @@ class WifiConnect(MycroftSkill):
 
     def _handle_network_not_detected(self, _message=None):
         """Triggers skill to start"""
+        if self.first_ever_run:
+            # This is the first time the Skill has ever run
+            self.first_ever_run = False
+            self.speak_dialog("greeting")
+        self.speak_dialog("network-connection-needed")
         self._start_wifi_setup()
 
     def _handle_ap_activated(self, _message=None):
@@ -106,6 +116,10 @@ class WifiConnect(MycroftSkill):
 
     def _handle_network_detected(self, _message=None):
         """Network detection succeeded after setup"""
+        if self.first_ever_run:
+            # This is the first time the Skill has ever run
+            self.first_ever_run = False
+            self.speak_dialog("greeting")
         if self._wifi_setup_started:
             self._wifi_setup_started = False
             self._wifi_setup_succeeded()
