@@ -87,7 +87,6 @@ class WifiConnect(MycroftSkill):
             # This is the first time the Skill has ever run
             self.first_ever_run = False
             self.speak_dialog("greeting")
-        self.speak_dialog("network-connection-needed")
         self._start_wifi_setup()
 
     def _handle_ap_activated(self, _message=None):
@@ -129,6 +128,7 @@ class WifiConnect(MycroftSkill):
         self._wifi_setup_started = True
         self._is_attempting_wifi_connection = False
         self.bus.emit(Message("system.wifi.setup.started"))
+        self.speak_dialog("network-connection-needed")
 
         # Request to enclosure to start activity
         self.bus.emit(Message("hardware.awconnect.create-ap"))
