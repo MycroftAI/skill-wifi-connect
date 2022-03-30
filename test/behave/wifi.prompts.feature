@@ -1,6 +1,6 @@
 Feature: wifi-setup-prompts
 
-  Scenario: Test screens
+  Scenario: Start Wifi Setup
     Given an english speaking user
-     When the user says "test wifi connect setup screens"
-     Then "wifi-connect" should reply with dialog from "1_ap.created_speech.dialog"
+     When no network is detected
+     Then "wifi-connect" should reply with dialog from "network-connection-needed.dialog"
